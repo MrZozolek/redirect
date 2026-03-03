@@ -1,7 +1,7 @@
 [build]
   command   = "echo ok"
   functions = "."
-  publish   = "public"
+  publish   = "."
 
 [[redirects]]
   from   = "/*"
