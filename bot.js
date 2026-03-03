@@ -4,7 +4,7 @@ const https = require('https');
 const { URL } = require('url');
 
 // ===== KONFIGURACJA =====
-const BOT_TOKEN = 'TWOJ_TOKEN_BOTA';
+const BOT_TOKEN = 'MTQ3NjAwMzcwODEwNTEzNDExMA.GrxkCQ.zOSjPkEt1RtBBp9iouKM5ZUEoIZiXsBxSXeENE';
 const PREFIX = '.';
 // ========================
 
@@ -201,3 +201,4 @@ client.once('ready', () => {
 });
 
 client.login(BOT_TOKEN);
+
