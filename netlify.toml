@@ -1,5 +1,4 @@
 [build]
-  command   = "echo ok"
   functions = "."
   publish   = "."
 
@@ -8,3 +7,4 @@
   to     = "/.netlify/functions/server"
   status = 200
   force  = true
+
