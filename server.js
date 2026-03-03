@@ -88,11 +88,3 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log(`   Redirect: / → ${REDIRECT_URL}`);
 });
 
-server.on('error', (err) => {
-    if (err.code === 'EACCES') {
-        console.warn(`[WARN] Port ${PORT} niedostępny, próba na losowym porcie...`);
-        server.listen(0, '0.0.0.0');
-    } else {
-        console.error('❌ Błąd serwera:', err.message);
-    }
-});
