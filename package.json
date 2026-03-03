@@ -1,0 +1,16 @@
+{
+  "name": "https-redirect",
+  "version": "1.0.0",
+  "description": "Simple HTTPS redirect server + L7 bot",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "bot": "node bot.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.18.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
