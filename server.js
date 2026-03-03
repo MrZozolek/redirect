@@ -78,6 +78,12 @@ exports.handler = async (event) => {
 
 // ─── LOKALNY SERWER (tylko gdy uruchomiony przez `node server.js`) ────────────
 if (require.main === module) {
+    // Netlify odpala node server.js jako build command — wychodzimy od razu
+    if (process.env.NETLIFY) {
+        console.log('Netlify build — pomijam start serwera.');
+        process.exit(0);
+    }
+
     const server = http.createServer((req, res) => {
         const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress;
         const method = req.method;
